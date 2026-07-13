@@ -1,0 +1,15 @@
+# Source & tooling (publish only dist + docs via package.json "files")
+src/
+tests/
+examples/
+coverage/
+.github/
+docs/
+*.config.ts
+*.config.js
+tsconfig.json
+vitest.config.ts
+tsup.config.ts
+.env
+.env.*
+node_modules/

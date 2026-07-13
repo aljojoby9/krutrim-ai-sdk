@@ -1,0 +1,101 @@
+{
+  "name": "krutrim-ai-sdk",
+  "version": "0.1.0",
+  "description": "Krutrim Cloud provider for the Vercel AI SDK — chat, streaming, tools, embeddings & Indic helpers for India's sovereign AI platform",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsup",
+    "build:watch": "tsup --watch",
+    "type-check": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "prepublishOnly": "npm run type-check && npm run test && npm run build"
+  },
+  "dependencies": {
+    "@ai-sdk/provider": "^3.0.0",
+    "@ai-sdk/provider-utils": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "ai": "^6.0.0",
+    "tsup": "^8.4.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0",
+    "zod": "^3.25.0"
+  },
+  "peerDependencies": {
+    "ai": "^6.0.0",
+    "zod": "^3.25.0 || ^4.0.0"
+  },
+  "peerDependenciesMeta": {
+    "zod": {
+      "optional": true
+    }
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aljojoby9/krutrim-ai-sdk.git"
+  },
+  "bugs": {
+    "url": "https://github.com/aljojoby9/krutrim-ai-sdk/issues"
+  },
+  "homepage": "https://github.com/aljojoby9/krutrim-ai-sdk#readme",
+  "keywords": [
+    "ai",
+    "ai-sdk",
+    "vercel",
+    "vercel-ai",
+    "vercel-ai-sdk",
+    "krutrim",
+    "ola-krutrim",
+    "olakrutrim",
+    "india",
+    "indic",
+    "hindi",
+    "bharat",
+    "sovereign-ai",
+    "llm",
+    "chat-completions",
+    "streaming",
+    "embeddings",
+    "bhashik",
+    "dhwani",
+    "openai-compatible",
+    "typescript",
+    "provider"
+  ],
+  "license": "MIT",
+  "author": {
+    "name": "aljojoby9",
+    "url": "https://github.com/aljojoby9"
+  },
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/aljojoby9"
+  }
+}
