@@ -1,5 +1,11 @@
 # Publishes to npm via Trusted Publisher (OIDC) — no long-lived npm token required.
 # Trigger: GitHub Release published, or manual "Run workflow".
+#
+# npm package Settings → Trusted Publisher must match:
+#   Organization/user: aljojoby9
+#   Repository:        krutrim-ai-sdk
+#   Workflow filename: publish.yml
+#   Environment:       (leave empty unless you set one below)
 name: Publish to npm
 
 on:
@@ -22,7 +28,11 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-          registry-url: 'https://registry.npmjs.org'
+          # registry-url injects a dummy NODE_AUTH_TOKEN that breaks OIDC publish —
+          # configure the registry manually below instead.
+
+      - name: Use latest npm (OIDC trusted publishing)
+        run: npm install -g npm@latest
 
       - name: Install dependencies
         run: npm ci
@@ -33,6 +43,8 @@ jobs:
           npm test
           npm run build
 
-      # Trusted Publisher authenticates via OIDC — do not set NODE_AUTH_TOKEN
-      - name: Publish to npm
-        run: npm publish --access public --provenance
+      - name: Publish to npm (Trusted Publisher)
+        run: |
+          npm config set //registry.npmjs.org/:_authToken=""
+          unset NODE_AUTH_TOKEN
+          npm publish --access public --provenance
