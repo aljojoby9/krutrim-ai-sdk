@@ -11,6 +11,7 @@ import {
 import { z } from 'zod';
 import type { KrutrimConfig } from '../config';
 import { krutrimFailedResponseHandler } from '../error';
+import { extractUserText } from './extract-user-text';
 
 const lidResponseSchema = z.object({
   status: z.string().nullish(),
@@ -23,30 +24,6 @@ const lidResponseSchema = z.object({
     )
     .nullish(),
 });
-
-function extractUserText(options: LanguageModelV3CallOptions): string {
-  const prompt = options.prompt as unknown;
-
-  if (typeof prompt === 'string') {
-    return prompt;
-  }
-
-  if (!Array.isArray(prompt)) {
-    return '';
-  }
-
-  const parts: string[] = [];
-  for (const message of prompt as LanguageModelV3CallOptions['prompt']) {
-    if (message.role === 'user') {
-      for (const part of message.content) {
-        if (part.type === 'text') {
-          parts.push(part.text);
-        }
-      }
-    }
-  }
-  return parts.join('\n');
-}
 
 /**
  * Language detection via Bhashik (`/api/v1/languagelabs/language-detection`).

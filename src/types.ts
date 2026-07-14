@@ -4,8 +4,11 @@ import type {
   SpeechModelV3,
   TranscriptionModelV3,
 } from '@ai-sdk/provider';
+import type { SentimentSettings } from './bhashik/sentiment';
 import type { KrutrimSpeechSettings } from './bhashik/speech-model';
+import type { SummarizationSettings } from './bhashik/summarization';
 import type { TranslationSettings } from './bhashik/translation';
+import type { TransliterateSettings } from './bhashik/transliterate';
 import type { ChatModelId, ChatSettings } from './chat/settings';
 import type { EmbeddingModelId } from './models';
 import type { BhashikLanguageCode, IndicLanguageCode } from './indic/languages';
@@ -13,16 +16,9 @@ import type { BhashikLanguageCode, IndicLanguageCode } from './indic/languages';
 /**
  * Krutrim provider interface — callable + factory methods.
  *
- * @example
- * ```ts
- * import { krutrim } from 'krutrim-ai-sdk';
- * import { generateText } from 'ai';
- *
- * const { text } = await generateText({
- *   model: krutrim('Krutrim-2'),
- *   prompt: 'नमस्ते! आज मौसम कैसा है?',
- * });
- * ```
+ * Surface mirrors [sarvam-ai-sdk](https://github.com/sarvamai/sarvam-ai-sdk)
+ * (chat, speech, transcription, translation, transliterate, language ID)
+ * plus Krutrim extras (embeddings, summarization, sentiment).
  */
 export type KrutrimProvider = {
   /**
@@ -60,15 +56,19 @@ export type KrutrimProvider = {
    *
    * @example
    * ```ts
-   * import { experimental_generateSpeech as generateSpeech } from 'ai';
-   * const { audio } = await generateSpeech({
-   *   model: krutrim.speech('hi-IN'),
-   *   text: 'नमस्ते, भारत!',
-   * });
+   * // language-first (simple)
+   * krutrim.speech('hi-IN')
+   * // Sarvam-style: model + language
+   * krutrim.speech('Krutrim-TTS', 'hi-IN')
    * ```
    */
   speech(
-    language: IndicLanguageCode | BhashikLanguageCode | string,
+    languageOrModel: IndicLanguageCode | BhashikLanguageCode | string,
+    languageOrSettings?:
+      | IndicLanguageCode
+      | BhashikLanguageCode
+      | string
+      | KrutrimSpeechSettings,
     settings?: KrutrimSpeechSettings,
   ): SpeechModelV3;
 
@@ -77,15 +77,13 @@ export type KrutrimProvider = {
    *
    * @example
    * ```ts
-   * import { experimental_transcribe as transcribe } from 'ai';
-   * const { text } = await transcribe({
-   *   model: krutrim.transcription('hi-IN'),
-   *   audio: await readFile('./clip.wav'),
-   * });
+   * krutrim.transcription('hi-IN')
+   * krutrim.transcription('Krutrim-Dhwani', 'hi-IN')
    * ```
    */
   transcription(
-    language: IndicLanguageCode | BhashikLanguageCode | string,
+    languageOrModel: IndicLanguageCode | BhashikLanguageCode | string,
+    language?: IndicLanguageCode | BhashikLanguageCode | string,
   ): TranscriptionModelV3;
 
   /**
@@ -94,15 +92,46 @@ export type KrutrimProvider = {
   languageDetection(): LanguageModelV3;
 
   /**
+   * Alias of {@link KrutrimProvider.languageDetection} (Sarvam naming).
+   */
+  languageIdentification(): LanguageModelV3;
+
+  /**
    * Bhashik text translation (works with `generateText`).
    *
    * @example
    * ```ts
+   * krutrim.translation({ from: 'hi-IN', to: 'en-IN' })
+   * // Sarvam-style: model first
+   * krutrim.translation('krutrim-translate-v1.0', { from: 'hi-IN', to: 'en-IN' })
+   * ```
+   */
+  translation(
+    modelOrSettings: string | TranslationSettings,
+    settings?: TranslationSettings,
+  ): LanguageModelV3;
+
+  /**
+   * Transliteration (Sarvam-compatible API).
+   * Uses chat completions under the hood (no dedicated Bhashik endpoint).
+   *
+   * @example
+   * ```ts
    * const { text } = await generateText({
-   *   model: krutrim.translation({ from: 'hi-IN', to: 'en-IN' }),
-   *   prompt: 'आज मौसम बहुत सुहाना है।',
+   *   model: krutrim.transliterate({ to: 'hi-IN', from: 'en-IN' }),
+   *   prompt: 'eda mone, happy alle?',
    * });
    * ```
    */
-  translation(settings: TranslationSettings): LanguageModelV3;
+  transliterate(settings: TransliterateSettings): LanguageModelV3;
+
+  /**
+   * Bhashik summarization.
+   */
+  summarization(settings?: SummarizationSettings): LanguageModelV3;
+
+  /**
+   * Bhashik sentiment analysis.
+   */
+  sentiment(settings?: SentimentSettings): LanguageModelV3;
 };

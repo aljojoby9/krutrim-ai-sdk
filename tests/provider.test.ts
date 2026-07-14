@@ -49,9 +49,39 @@ describe('createKrutrim', () => {
     expect(provider.languageDetection().modelId).toBe(
       'bhashik-language-detection',
     );
+    expect(provider.languageIdentification().modelId).toBe(
+      'bhashik-language-detection',
+    );
     expect(
       provider.translation({ from: 'hi-IN', to: 'en-IN' }).modelId,
     ).toBe('krutrim-translate-v1.0');
+    expect(
+      provider.translation('krutrim-translate-v1.0', {
+        from: 'hi-IN',
+        to: 'en-IN',
+      }).modelId,
+    ).toBe('krutrim-translate-v1.0');
+  });
+
+  it('creates transliterate, summarization, sentiment (Sarvam-style TTT + extras)', () => {
+    const provider = createKrutrim({ apiKey: 'test-key-123' });
+    expect(provider.transliterate({ to: 'hi-IN' }).modelId).toContain(
+      'transliterate',
+    );
+    expect(provider.summarization({ language: 'hin' }).modelId).toBe(
+      'bhashik-summarization',
+    );
+    expect(provider.sentiment({ language: 'eng' }).modelId).toBe(
+      'bhashik-sentiment',
+    );
+  });
+
+  it('supports Sarvam-style speech(model, language) signature', () => {
+    const provider = createKrutrim({ apiKey: 'test-key-123' });
+    const s = provider.speech('Krutrim-TTS', 'hi-IN');
+    expect(s.modelId).toBe('Krutrim-TTS');
+    const t = provider.transcription('Krutrim-Dhwani', 'ta-IN');
+    expect(t.modelId).toBe('Krutrim-Dhwani');
   });
 
   it('rejects new keyword misuse', () => {

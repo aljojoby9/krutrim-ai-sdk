@@ -12,53 +12,56 @@ import { z } from 'zod';
 import type { KrutrimConfig } from '../config';
 import { krutrimFailedResponseHandler } from '../error';
 import {
+  type BhashikLanguageCode,
   type IndicLanguageCode,
-  toTranslationLanguageCode,
+  toBhashikLanguageCode,
 } from '../indic/languages';
 import { extractUserText } from './extract-user-text';
 
-const translationResponseSchema = z.object({
+const summaryResponseSchema = z.object({
   status: z.string().nullish(),
   data: z
     .object({
-      translated_text: z.string().nullish(),
+      summaryText: z.string().nullish(),
     })
     .nullish(),
 });
 
-export type TranslationSettings = {
+export type SummarizationSettings = {
   /**
-   * Source language (BCP-47 like `hi-IN`, short `hin`, or `hin_Deva`).
+   * Input language (BCP-47 or Bhashik short code).
+   * @default "eng"
    */
-  from: IndicLanguageCode | string;
+  language?: IndicLanguageCode | BhashikLanguageCode | string;
   /**
-   * Target language (BCP-47 like `en-IN`, short `eng`, or `eng_Latn`).
+   * Target summary size in words.
+   * @default 50
    */
-  to: IndicLanguageCode | string;
-  /**
-   * Translation model.
-   * @default "krutrim-translate-v1.0"
-   */
-  model?: string;
+  summarySize?: number;
 };
 
+function resolveBhashikLang(
+  code: string | undefined,
+): BhashikLanguageCode | string {
+  if (!code) return 'eng';
+  return toBhashikLanguageCode(code) ?? code;
+}
+
 /**
- * Bhashik text translation as a LanguageModelV3 (works with `generateText`).
- * Only translates user/prompt text — not system or assistant messages.
+ * Bhashik summarization as LanguageModelV3 (`generateText`).
  */
-export class KrutrimTranslationModel implements LanguageModelV3 {
+export class KrutrimSummarizationModel implements LanguageModelV3 {
   readonly specificationVersion = 'v3';
-  readonly modelId: string;
+  readonly modelId = 'bhashik-summarization';
   readonly provider: string;
 
-  private readonly settings: TranslationSettings;
+  private readonly settings: SummarizationSettings;
   private readonly config: KrutrimConfig;
 
-  constructor(settings: TranslationSettings, config: KrutrimConfig) {
+  constructor(settings: SummarizationSettings = {}, config: KrutrimConfig) {
     this.settings = settings;
     this.config = config;
     this.provider = config.provider;
-    this.modelId = settings.model ?? 'krutrim-translate-v1.0';
   }
 
   get supportedUrls(): Record<string, RegExp[]> {
@@ -70,17 +73,13 @@ export class KrutrimTranslationModel implements LanguageModelV3 {
   ): Promise<Awaited<ReturnType<LanguageModelV3['doGenerate']>>> {
     const text = extractUserText(options);
     if (!text.trim()) {
-      throw new Error('Translation requires a non-empty user prompt or message.');
+      throw new Error('Summarization requires a non-empty user prompt or message.');
     }
-
-    const src = toTranslationLanguageCode(this.settings.from);
-    const tgt = toTranslationLanguageCode(this.settings.to);
 
     const body = {
       text,
-      src_language: src,
-      tgt_language: tgt,
-      model: this.modelId,
+      input_language: resolveBhashikLang(this.settings.language),
+      summary_size: this.settings.summarySize ?? 50,
     };
 
     const {
@@ -88,21 +87,17 @@ export class KrutrimTranslationModel implements LanguageModelV3 {
       value: response,
       rawValue,
     } = await postJsonToApi({
-      url: this.config.languageLabsUrl('/languagelabs/translation'),
+      url: this.config.languageLabsUrl('/languagelabs/summarization'),
       headers: combineHeaders(this.config.headers(), options.headers),
       body,
       failedResponseHandler: krutrimFailedResponseHandler,
-      successfulResponseHandler: createJsonResponseHandler(
-        translationResponseSchema,
-      ),
+      successfulResponseHandler: createJsonResponseHandler(summaryResponseSchema),
       abortSignal: options.abortSignal,
       fetch: this.config.fetch,
     });
 
-    const translated = response.data?.translated_text ?? '';
-    const content: LanguageModelV3Content[] = [
-      { type: 'text', text: translated },
-    ];
+    const summary = response.data?.summaryText ?? '';
+    const content: LanguageModelV3Content[] = [{ type: 'text', text: summary }];
 
     return {
       content,
@@ -121,17 +116,13 @@ export class KrutrimTranslationModel implements LanguageModelV3 {
         },
       },
       providerMetadata: {
-        krutrim: {
-          src_language: src,
-          tgt_language: tgt,
-          model: this.modelId,
-        },
+        krutrim: { summary_size: body.summary_size },
       },
       warnings: [
         {
           type: 'other',
           message:
-            'translation only processes prompt / user messages (not system or assistant).',
+            'summarization only processes prompt / user messages (not system or assistant).',
         },
       ],
       request: { body },

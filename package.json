@@ -1,6 +1,6 @@
 {
   "name": "krutrim-ai-sdk",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Krutrim Cloud provider for the Vercel AI SDK — chat, streaming, tools, embeddings & Indic helpers for India's sovereign AI platform",
   "type": "module",
   "main": "./dist/index.cjs",

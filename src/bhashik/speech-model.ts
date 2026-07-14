@@ -31,6 +31,12 @@ export type KrutrimSpeechSettings = {
    * @default "female"
    */
   speaker?: 'female' | 'male';
+  /**
+   * Optional catalogue model id (for DX parity with Sarvam-style `speech(model, lang)`).
+   * Bhashik TTS currently uses Language Labs endpoints; this is stored for metadata.
+   * @default "Krutrim-TTS"
+   */
+  model?: string;
 };
 
 /**
@@ -41,7 +47,7 @@ export type KrutrimSpeechSettings = {
  */
 export class KrutrimSpeechModel implements SpeechModelV3 {
   readonly specificationVersion = 'v3';
-  readonly modelId = 'Krutrim-TTS';
+  readonly modelId: string;
 
   private readonly languageCode: BhashikLanguageCode;
   private readonly settings: KrutrimSpeechSettings;
@@ -71,6 +77,7 @@ export class KrutrimSpeechModel implements SpeechModelV3 {
     }
     this.settings = settings;
     this.config = config;
+    this.modelId = settings.model ?? 'Krutrim-TTS';
   }
 
   get provider(): string {

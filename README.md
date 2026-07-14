@@ -236,10 +236,12 @@ transliterationNotes('hi-IN');
 indicSupportAgentPrompt({ brandName: 'PayApp' });
 ```
 
-### Bhashik extras
+### Bhashik / TTT helpers (Sarvam-style surface)
+
+Same idea as [sarvam-ai-sdk](https://github.com/sarvamai/sarvam-ai-sdk): language ID, translation, transliteration, speech, STT — plus Krutrim extras.
 
 ```ts
-// Language detection
+// Language detection (also: languageIdentification())
 await generateText({
   model: krutrim.languageDetection(),
   prompt: 'എന്തൊരു മനോഹരമായ ദിവസം!',
@@ -249,6 +251,22 @@ await generateText({
 await generateText({
   model: krutrim.translation({ from: 'hi-IN', to: 'en-IN' }),
   prompt: 'आज मौसम बहुत सुहाना है।',
+});
+
+// Transliteration (chat-backed; same DX as Sarvam)
+await generateText({
+  model: krutrim.transliterate({ to: 'hi-IN', from: 'en-IN' }),
+  prompt: 'namaste, aap kaise ho?',
+});
+
+// Summarization / sentiment (Bhashik Language Labs)
+await generateText({
+  model: krutrim.summarization({ language: 'hin', summarySize: 40 }),
+  prompt: '…long Hindi article…',
+});
+await generateText({
+  model: krutrim.sentiment({ language: 'eng' }),
+  prompt: 'The service was excellent!',
 });
 
 // Embeddings
@@ -285,11 +303,22 @@ krutrim.chat('deepseek-r1');
 krutrim.embedding('Vyakyarth');
 krutrim.textEmbeddingModel('Bhasantarit');
 
-// Bhashik / Language Labs
+// Speech / STT (language-first or Sarvam-style model + language)
 krutrim.speech('hi-IN');
+krutrim.speech('Krutrim-TTS', 'hi-IN');
 krutrim.transcription('ta-IN');
+krutrim.transcription('Krutrim-Dhwani', 'ta-IN');
+
+// Language ID / translation / transliterate
 krutrim.languageDetection();
+krutrim.languageIdentification(); // alias
 krutrim.translation({ from: 'hi-IN', to: 'en-IN' });
+krutrim.translation('krutrim-translate-v1.0', { from: 'hi-IN', to: 'en-IN' });
+krutrim.transliterate({ to: 'hi-IN', from: 'en-IN' });
+
+// Bhashik extras
+krutrim.summarization({ language: 'hin' });
+krutrim.sentiment({ language: 'eng' });
 ```
 
 Base URL: `https://cloud.olakrutrim.com/v1`  
@@ -325,6 +354,8 @@ npx tsx --env-file=.env examples/generate-text.ts
 - [x] Indic prompt helpers + India-aware errors
 - [x] Embeddings (Vyakyarth / Bhasantarit)
 - [x] Bhashik TTS / STT / LID / translation (lightweight)
+- [x] Transliterate + languageIdentification (Sarvam-compatible surface)
+- [x] Summarization + sentiment (Bhashik)
 - [ ] Official listing under AI SDK [community providers](https://ai-sdk.dev/providers/community-providers)
 - [ ] Image generation helpers (diffusion / multimodal)
 - [ ] AI SDK v7 (`LanguageModelV4`) track

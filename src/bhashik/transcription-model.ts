@@ -28,7 +28,7 @@ const sttResponseSchema = z.object({
  */
 export class KrutrimTranscriptionModel implements TranscriptionModelV3 {
   readonly specificationVersion = 'v3';
-  readonly modelId = 'Krutrim-Dhwani';
+  readonly modelId: string;
 
   private readonly languageCode: BhashikLanguageCode;
   private readonly config: KrutrimConfig;
@@ -36,6 +36,11 @@ export class KrutrimTranscriptionModel implements TranscriptionModelV3 {
   constructor(
     language: IndicLanguageCode | BhashikLanguageCode | string,
     config: KrutrimConfig,
+    /**
+     * Optional catalogue model id (Sarvam-style `transcription(model, lang)`).
+     * @default "Krutrim-Dhwani"
+     */
+    modelId: string = 'Krutrim-Dhwani',
   ) {
     const mapped = toBhashikLanguageCode(language);
     if (!mapped) {
@@ -54,6 +59,7 @@ export class KrutrimTranscriptionModel implements TranscriptionModelV3 {
       this.languageCode = mapped;
     }
     this.config = config;
+    this.modelId = modelId;
   }
 
   get provider(): string {

@@ -52,6 +52,9 @@ export {
   indicSupportAgentPrompt,
 } from './indic/prompts';
 
-// Bhashik settings
+// Bhashik / TTT settings
 export type { KrutrimSpeechSettings } from './bhashik/speech-model';
 export type { TranslationSettings } from './bhashik/translation';
+export type { TransliterateSettings } from './bhashik/transliterate';
+export type { SummarizationSettings } from './bhashik/summarization';
+export type { SentimentSettings } from './bhashik/sentiment';

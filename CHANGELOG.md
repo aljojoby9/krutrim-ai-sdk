@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.1] — 2026-07-13
+
+### Added
+
+- **`transliterate({ to, from })`** — Sarvam-compatible DX (chat-backed; no dedicated Bhashik endpoint)
+- **`languageIdentification()`** — alias of `languageDetection()` (Sarvam naming)
+- **`summarization()`** / **`sentiment()`** — Bhashik Language Labs helpers
+- Sarvam-style overloads: `speech(model, language)`, `transcription(model, language)`, `translation(model, settings)`
+
 ## [0.1.0] — 2026-07-13
 
 ### Added
@@ -21,4 +30,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - India-aware error enrichment (rate limits, INR credits, region, invalid model)
 - Examples, tests, MIT license, contributing docs
 
+[0.1.1]: https://github.com/aljojoby9/krutrim-ai-sdk/releases/tag/v0.1.1
 [0.1.0]: https://github.com/aljojoby9/krutrim-ai-sdk/releases/tag/v0.1.0

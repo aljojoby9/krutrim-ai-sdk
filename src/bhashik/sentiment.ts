@@ -12,53 +12,48 @@ import { z } from 'zod';
 import type { KrutrimConfig } from '../config';
 import { krutrimFailedResponseHandler } from '../error';
 import {
+  type BhashikLanguageCode,
   type IndicLanguageCode,
-  toTranslationLanguageCode,
+  toBhashikLanguageCode,
 } from '../indic/languages';
 import { extractUserText } from './extract-user-text';
 
-const translationResponseSchema = z.object({
+const sentimentResponseSchema = z.object({
   status: z.string().nullish(),
-  data: z
-    .object({
-      translated_text: z.string().nullish(),
-    })
+  Sentiment: z
+    .array(
+      z.object({
+        label: z.string().nullish(),
+        value: z.array(z.string()).nullish(),
+      }),
+    )
     .nullish(),
 });
 
-export type TranslationSettings = {
+export type SentimentSettings = {
   /**
-   * Source language (BCP-47 like `hi-IN`, short `hin`, or `hin_Deva`).
+   * Input language (BCP-47 or Bhashik short code).
+   * @default "eng"
    */
-  from: IndicLanguageCode | string;
-  /**
-   * Target language (BCP-47 like `en-IN`, short `eng`, or `eng_Latn`).
-   */
-  to: IndicLanguageCode | string;
-  /**
-   * Translation model.
-   * @default "krutrim-translate-v1.0"
-   */
-  model?: string;
+  language?: IndicLanguageCode | BhashikLanguageCode | string;
 };
 
 /**
- * Bhashik text translation as a LanguageModelV3 (works with `generateText`).
- * Only translates user/prompt text — not system or assistant messages.
+ * Bhashik sentiment analysis as LanguageModelV3 (`generateText`).
+ * Returns a compact text summary of sentiment labels.
  */
-export class KrutrimTranslationModel implements LanguageModelV3 {
+export class KrutrimSentimentModel implements LanguageModelV3 {
   readonly specificationVersion = 'v3';
-  readonly modelId: string;
+  readonly modelId = 'bhashik-sentiment';
   readonly provider: string;
 
-  private readonly settings: TranslationSettings;
+  private readonly settings: SentimentSettings;
   private readonly config: KrutrimConfig;
 
-  constructor(settings: TranslationSettings, config: KrutrimConfig) {
+  constructor(settings: SentimentSettings = {}, config: KrutrimConfig) {
     this.settings = settings;
     this.config = config;
     this.provider = config.provider;
-    this.modelId = settings.model ?? 'krutrim-translate-v1.0';
   }
 
   get supportedUrls(): Record<string, RegExp[]> {
@@ -70,17 +65,19 @@ export class KrutrimTranslationModel implements LanguageModelV3 {
   ): Promise<Awaited<ReturnType<LanguageModelV3['doGenerate']>>> {
     const text = extractUserText(options);
     if (!text.trim()) {
-      throw new Error('Translation requires a non-empty user prompt or message.');
+      throw new Error(
+        'Sentiment analysis requires a non-empty user prompt or message.',
+      );
     }
 
-    const src = toTranslationLanguageCode(this.settings.from);
-    const tgt = toTranslationLanguageCode(this.settings.to);
+    const lang =
+      toBhashikLanguageCode(this.settings.language ?? 'eng') ??
+      this.settings.language ??
+      'eng';
 
     const body = {
       text,
-      src_language: src,
-      tgt_language: tgt,
-      model: this.modelId,
+      lang_from: lang,
     };
 
     const {
@@ -88,21 +85,23 @@ export class KrutrimTranslationModel implements LanguageModelV3 {
       value: response,
       rawValue,
     } = await postJsonToApi({
-      url: this.config.languageLabsUrl('/languagelabs/translation'),
+      url: this.config.languageLabsUrl('/languagelabs/sentiment-analysis'),
       headers: combineHeaders(this.config.headers(), options.headers),
       body,
       failedResponseHandler: krutrimFailedResponseHandler,
       successfulResponseHandler: createJsonResponseHandler(
-        translationResponseSchema,
+        sentimentResponseSchema,
       ),
       abortSignal: options.abortSignal,
       fetch: this.config.fetch,
     });
 
-    const translated = response.data?.translated_text ?? '';
-    const content: LanguageModelV3Content[] = [
-      { type: 'text', text: translated },
-    ];
+    const labels =
+      response.Sentiment?.flatMap((s) => s.value ?? (s.label ? [s.label] : [])) ??
+      [];
+    const out = labels.length > 0 ? labels.join(', ') : 'unknown';
+
+    const content: LanguageModelV3Content[] = [{ type: 'text', text: out }];
 
     return {
       content,
@@ -122,16 +121,14 @@ export class KrutrimTranslationModel implements LanguageModelV3 {
       },
       providerMetadata: {
         krutrim: {
-          src_language: src,
-          tgt_language: tgt,
-          model: this.modelId,
+          Sentiment: response.Sentiment ?? [],
         },
       },
       warnings: [
         {
           type: 'other',
           message:
-            'translation only processes prompt / user messages (not system or assistant).',
+            'sentiment only processes prompt / user messages (not system or assistant).',
         },
       ],
       request: { body },
